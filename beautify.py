@@ -146,10 +146,10 @@ def beautify_for_message(diff_file):
     return '\n'.join(beautify_correction_msg(corr) for corr in corrections)
 
 
-def beautify_for_HTML(diff_file):
+def beautify_for_HTML(diff_file, title):
     corrections = convert_diff_file_into_tuples(diff_file)
     res = '\n'.join(beautify_correction_HTML(corr) for corr in corrections)
-    return HTML_TEMPLATE.render(body=res)
+    return HTML_TEMPLATE.render(body=res, title=title)
 
 
 if __name__ == "__main__":
@@ -168,7 +168,8 @@ if __name__ == "__main__":
     if to == 'message':
         beautified = beautify_for_message(diff_file)
     else:
-        beautified = beautify_for_HTML(diff_file)
+        title = re.sub(r'\..*$','', diff_file.name)
+        beautified = beautify_for_HTML(diff_file, title=title)
     outputfile.write(beautified)
     outputfile.close()
     diff_file.close()
