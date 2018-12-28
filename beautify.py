@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 import re
 import sys
+import os
 from collections import namedtuple
 import argparse
 from funcy import walk, drop, lpartition_by
 from difflib import unified_diff
+import jinja2
+
+path_current_script = os.path.dirname(os.path.realpath(__file__))
+templateLoader = jinja2.FileSystemLoader(searchpath=path_current_script)
+templateEnv = jinja2.Environment(loader=templateLoader)
 
 
 Correction = namedtuple('Correction', ['before', 'after', 'explantion'])
@@ -15,34 +21,7 @@ ITALIC_SERIF = r'𝑎𝑏𝑐𝑑𝑒𝑓𝑔ℎ𝑖𝑗𝑘𝑙𝑚𝑛𝑜𝑝
 ITALIC_SANS = r'𝘢𝘣𝘤𝘥𝘦𝘧𝘨𝘩𝘪𝘫𝘬𝘭𝘮𝘯𝘰𝘱𝘲𝘳𝘴𝘵𝘶𝘷𝘸𝘹𝘺𝘻'
 # strike = lambda x: x + '\u0338'
 
-HEADER = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title></title>
-    <style>
-    del, ins {
-    text-decoration: none;
-    }
-    del {
-    background-color: #fbb6c2;
-    }
-    ins {
-    background-color: #d4fcbc;
-    }
-    em {
-    color: gray;
-    }
-    </style>
-</head>
-<body>
-"""
-FOOTER = """
-</body>
-</html>
-"""
-
+HTML_TEMPLATE = templateEnv.get_template('inlined_diff_html_template.j2')
 
 def strike(text):
     res = ''
@@ -164,18 +143,13 @@ def beautify_correction_HTML(correction):
 
 def beautify_for_message(diff_file):
     corrections = convert_diff_file_into_tuples(diff_file)
-    res = ''
-    for corr in corrections:
-        res += beautify_correction_msg(corr) + '\n'
-    return res
+    return '\n'.join(beautify_correction_msg(corr) for corr in corrections)
 
 
 def beautify_for_HTML(diff_file):
     corrections = convert_diff_file_into_tuples(diff_file)
-    res = HEADER
-    for corr in corrections:
-        res += beautify_correction_HTML(corr) + '\n'
-    return res + FOOTER
+    res = '\n'.join(beautify_correction_HTML(corr) for corr in corrections)
+    return HTML_TEMPLATE.render(body=res)
 
 
 if __name__ == "__main__":
